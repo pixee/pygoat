@@ -11,8 +11,7 @@ import uuid
 from dataclasses import dataclass
 from hashlib import md5
 from io import BytesIO
-from xml.dom.pulldom import START_ELEMENT, parseString
-from xml.sax import make_parser
+from xml.dom.pulldom import START_ELEMENT
 from xml.sax.handler import feature_external_ges
 
 import jwt
@@ -32,6 +31,8 @@ from .models import (FAANG, AF_admin, AF_session_id, Blogs, CF_user, authLogin,
 from .utility import customHash, filter_blog
 from security import safe_command, safe_requests
 import secrets
+import defusedxml.pulldom
+import defusedxml.sax
 
 #*****************************************Lab Requirements****************************************************#
 
@@ -243,9 +244,9 @@ def xxe_see(request):
 @csrf_exempt
 def xxe_parse(request):
 
-    parser = make_parser()
+    parser = defusedxml.sax.make_parser()
     parser.setFeature(feature_external_ges, True)
-    doc = parseString(request.body.decode('utf-8'), parser=parser)
+    doc = defusedxml.pulldom.parseString(request.body.decode('utf-8'), parser=parser)
     for event, node in doc:
         if event == START_ELEMENT and node.tagName == 'text':
             doc.expandNode(node)

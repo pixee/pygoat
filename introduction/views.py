@@ -4,7 +4,6 @@ import hashlib
 import logging
 import os
 import pickle
-import random
 import re
 import string
 import subprocess
@@ -12,9 +11,7 @@ import uuid
 from dataclasses import dataclass
 from hashlib import md5
 from io import BytesIO
-from random import randint
-from xml.dom.pulldom import START_ELEMENT, parseString
-from xml.sax import make_parser
+from xml.dom.pulldom import START_ELEMENT
 from xml.sax.handler import feature_external_ges
 
 import jwt
@@ -32,7 +29,10 @@ from .forms import NewUserForm
 from .models import (FAANG, AF_admin, AF_session_id, Blogs, CF_user, authLogin,
                      comments, login, otp, sql_lab_table, tickits)
 from .utility import customHash, filter_blog
-from security import safe_requests
+from security import safe_command, safe_requests
+import secrets
+import defusedxml.pulldom
+import defusedxml.sax
 
 #*****************************************Lab Requirements****************************************************#
 
@@ -244,9 +244,9 @@ def xxe_see(request):
 @csrf_exempt
 def xxe_parse(request):
 
-    parser = make_parser()
+    parser = defusedxml.sax.make_parser()
     parser.setFeature(feature_external_ges, True)
-    doc = parseString(request.body.decode('utf-8'), parser=parser)
+    doc = defusedxml.pulldom.parseString(request.body.decode('utf-8'), parser=parser)
     for event, node in doc:
         if event == START_ELEMENT and node.tagName == 'text':
             doc.expandNode(node)
@@ -415,8 +415,7 @@ def cmd_lab(request):
             
             try:
                 # output=subprocess.check_output(command,shell=True,encoding="UTF-8")
-                process = subprocess.Popen(
-                    command,
+                process = safe_command.run(subprocess.Popen, command,
                     shell=True,
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE)
@@ -481,7 +480,7 @@ def login_otp(request):
 def Otp(request):
     if request.method=="GET":
         email=request.GET.get('email')
-        otpN=randint(100,999)
+        otpN=secrets.SystemRandom().randint(100,999)
         if email and otpN:
             if email=="admin@pygoat.com":
                 otp.objects.filter(id=2).update(otp=otpN)
@@ -545,7 +544,7 @@ def a9_lab(request):
             try :
                 file=request.FILES["file"]
                 try :
-                    data = yaml.load(file,yaml.Loader)
+                    data = yaml.load(file,yaml.SafeLoader)
                     
                     return render(request,"Lab/A9/a9_lab.html",{"data":data})
                 except:
@@ -665,7 +664,7 @@ def a10_lab2(request):
 #*********************************************************A11*************************************************#
 
 def gentckt():
-    return (''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=10)))
+    return (''.join(secrets.SystemRandom().choices(string.ascii_uppercase + string.ascii_lowercase, k=10)))
 
 def insec_desgine(request):
     if request.user.is_authenticated:

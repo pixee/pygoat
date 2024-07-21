@@ -4,7 +4,6 @@ import hashlib
 import logging
 import os
 import pickle
-import random
 import re
 import string
 import subprocess
@@ -12,7 +11,6 @@ import uuid
 from dataclasses import dataclass
 from hashlib import md5
 from io import BytesIO
-from random import randint
 from xml.dom.pulldom import START_ELEMENT, parseString
 from xml.sax import make_parser
 from xml.sax.handler import feature_external_ges
@@ -33,6 +31,7 @@ from .models import (FAANG, AF_admin, AF_session_id, Blogs, CF_user, authLogin,
                      comments, login, otp, sql_lab_table, tickits)
 from .utility import customHash, filter_blog
 from security import safe_command, safe_requests
+import secrets
 
 #*****************************************Lab Requirements****************************************************#
 
@@ -480,7 +479,7 @@ def login_otp(request):
 def Otp(request):
     if request.method=="GET":
         email=request.GET.get('email')
-        otpN=randint(100,999)
+        otpN=secrets.SystemRandom().randint(100,999)
         if email and otpN:
             if email=="admin@pygoat.com":
                 otp.objects.filter(id=2).update(otp=otpN)
@@ -664,7 +663,7 @@ def a10_lab2(request):
 #*********************************************************A11*************************************************#
 
 def gentckt():
-    return (''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=10)))
+    return (''.join(secrets.SystemRandom().choices(string.ascii_uppercase + string.ascii_lowercase, k=10)))
 
 def insec_desgine(request):
     if request.user.is_authenticated:
